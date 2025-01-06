@@ -12,6 +12,7 @@ rm( list = ls() )
 
 # are we running locally?
 run.local = FALSE
+# run.local = TRUE
 
 # should we set scen params interactively on cluster?
 # *if you accidently set this to TRUE and run via sbatches on cluster,
@@ -112,6 +113,8 @@ if (run.local == FALSE ) {
       betaAC = c(1),
       # logistic regression coef of C on R
       betaCR = c(1),
+      # logistic regression coef of Q on R
+      betaQR = c(1),
       
       # which var(s) should be missing?
       # options: "c('A', 'Y', 'C'), c('A'), c('Y')"
@@ -145,7 +148,7 @@ if ( run.local == TRUE ) {
   
   
   # helper fns
-  code.dir = here()
+  code.dir = here("Code")
   setwd(code.dir)
   source("helper_CCvMI.R")
   
@@ -154,7 +157,7 @@ if ( run.local == TRUE ) {
                           pattern = "Code",
                           replacement = "Data" )
   
-  # ~~ Set Sim Params: Local Run -----------------------------
+  # ~~ ********** Set Sim Params: Local Run -----------------------------
   
     # FOR RUNNING 1 SCEN
   scen.params = tidyr::expand_grid(
@@ -163,7 +166,7 @@ if ( run.local == TRUE ) {
     rep.methods = "gold-std ; CC-adj ; CC-unadj ; MI-unadj ; MI-adj",
     model = "OLS",
 
-    dag_name = c( "I(c)" ),
+    dag_name = c( "IV(c)" ),
     N = c(10^4),
     # true OLS coefficient of A on Y
     betaAY = c(1),
@@ -173,10 +176,16 @@ if ( run.local == TRUE ) {
     betaAC = c(1),
     # logistic regression coef of C on R
     betaCR = c(1),
+    # logistic regression coef of Q [confounder] on A
+    betaQA = c(1),
+    # logistic regression coef of Q [confounder] on A
+    betaQR = c(1),
+    # OLS regression coef of Q [confounder] on Y
+    betaQY = c(1),
 
     # which var(s) should be missing?
     # options: "c('A', 'Y'), c('A'), c('Y')"
-    missing_vars = c( "c('A')")  # quotation marks must be single inside double
+    missing_vars = c( "c('A', 'Y', 'Q')")  # quotation marks must be single inside double
   )
   
   # # FULL SET
@@ -293,8 +302,8 @@ for ( scen in scens_to_run ) {
         # variables that shouldn't be in imp model
         # BE CAREFUL because some scens (DAG I(b)) have unmeasured vars
         # toDrop = c("R", "dat_pR")
-        toKeep = c("A", "Y", "C")
-        toKeep = toKeep[ toKeep %in% names(dm) ]  # in case a DAG lacks C completely
+        toKeep = c("A", "Y", "C", "Q")
+        toKeep = toKeep[ toKeep %in% names(dm) ]  # in case a DAG doesn't have C or Q in the first place
         
         if ( p$dag_name != "I(c)" ) {
           imps = mice( dm %>% dplyr::select(toKeep),
@@ -355,38 +364,6 @@ for ( scen in scens_to_run ) {
       }
       
       
-      
-      
-      # ~~ IPW-adj ----
-      #@see important notes in fit_regression about how this IPW implementation is quick and dirty
-      if ( "IPW-adj" %in% all.methods & !is.na(adj_form_string) ) {
-        rep.res = run_method_safe(method.label = c("IPW-adj"),
-                                  
-                                  method.fn = function(x) fit_regression(form_string = adj_form_string,
-                                                                         model = p$model,
-                                                                         miss_method = "IPW",
-                                                                         dm = dm,
-                                                                         du = du,
-                                                                         imps = imps),
-                                  .rep.res = rep.res )
-      }
-      
-      
-      # ~~ IPW-unadj ----
-      #@see important notes in fit_regression about how this IPW implementation is quick and dirty
-      if ( "IPW-unadj" %in% all.methods & !is.na(unadj_form_string) ) {
-        rep.res = run_method_safe(method.label = c("IPW-unadj"),
-                                  
-                                  method.fn = function(x) fit_regression(form_string = unadj_form_string,
-                                                                         model = p$model,
-                                                                         miss_method = "IPW",
-                                                                         dm = dm,
-                                                                         du = du,
-                                                                         imps = imps),
-                                  .rep.res = rep.res )
-      }
-      
-      
       # ~~ CC-unadj ----
       if ( "CC-unadj" %in% all.methods & !is.na(unadj_form_string) ) {
         rep.res = run_method_safe(method.label = c("CC-unadj"),
@@ -416,21 +393,7 @@ for ( scen in scens_to_run ) {
                                   .rep.res = rep.res )
       }
       
-      
-      # ~~ CC-unadj ----
-      if ( "CC-unadj" %in% all.methods & !is.na(unadj_form_string) ) {
-        rep.res = run_method_safe(method.label = c("CC-unadj"),
-                                  
-                                  method.fn = function(x) fit_regression(form_string = unadj_form_string,
-                                                                         model = p$model,
-                                                                         miss_method = "CC",
-                                                                         dm = dm,
-                                                                         du = du,
-                                                                         imps = imps),
-                                  .rep.res = rep.res )
-      }
-      
-      srr(rep.res)
+    
       
       # ~~ MI-adj ----
       if ( "MI-adj" %in% all.methods & !is.na(adj_form_string) ) {
