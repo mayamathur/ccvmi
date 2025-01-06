@@ -59,62 +59,91 @@ sim_data = function(.p) {
   # ~ Type-I DAGs: Sufficient set exists ----------------
   
   # ~~ DAG I(a) ----
-  # formerly "comm_cause_1"
-  if ( .p$dag_name %in% c( "I(a)", "comm_cause_1" ) ) {
+  if ( .p$dag_name %in% c( "I(a)" ) ) {
     
-    du = data.frame( A = rbinom( n = .p$N,
+    du = data.frame( Q = rbinom( n = .p$N,
                                  size = 1,
                                  prob = 0.5),
                      
                      C = rnorm( n = .p$N ) )
     
     du = du %>% rowwise() %>%
-      mutate( R = rbinom( n = 1,
+      mutate( A = rbinom( n = 1,
                           size = 1,
-                          #@hard-coded coef for A because not in scen.params
-                          prob = expit(-0.5 + .p$betaCR * C + 1 * A) ),
+                          prob = expit(-0.5 + .p$betaQA * Q) ),
               
               # also depends on (A,C)
               Y = rnorm( n = 1,
-                         mean = .p$betaCY * C + .p$betaAY * A ) )
+                         mean = .p$betaQY * Q + .p$betaCY * C + .p$betaAY * A ),
+              
+              RA = rbinom( n = 1,
+                           size = 1,
+                           #@hard-coded coef for A because not in scen.params
+                           prob = expit(-0.5 + .p$betaCR * C + 1 * A) ),
+              
+              RY = rbinom( n = 1,
+                           size = 1,
+                           #@hard-coded coef for A because not in scen.params
+                           prob = expit(-0.5 + .p$betaCR * C + 1 * A) ),
+              
+              R = RA * RY )
     
     # check intercept for R to get desired pR ~ 0.50
     mean(du$R)
     
-    gold_std_form_string = "Y ~ A"
-    unadj_form_string = "Y ~ A"
-    adj_form_string = "Y ~ A + C"
+    colMeans(du)
+    
+    gold_std_form_string = "Y ~ A + Q"
+    unadj_form_string = "Y ~ A + Q"
+    adj_form_string = "Y ~ A + C + Q"
     
   }
   
   
   
   
-  # ~~ DAG II(a)-Q ----
-  if ( .p$dag_name %in% c( "II(a)-Q" ) ) {
+  # ~~ DAG I(a)-Q ----
+  if ( .p$dag_name %in% c( "I(a)-Q" ) ) {
     
-    du = data.frame( A = rbinom( n = .p$N,
+    du = data.frame( Q = rbinom( n = .p$N,
                                  size = 1,
                                  prob = 0.5),
                      
                      C = rnorm( n = .p$N ) )
     
     du = du %>% rowwise() %>%
-      mutate( R = rbinom( n = 1,
+      mutate( A = rbinom( n = 1,
                           size = 1,
-                          #@hard-coded coef for A because not in scen.params
-                          prob = expit(-0.5 + .p$betaCR * C + 1 * A) ),
+                          prob = expit(-0.5 + .p$betaQA * Q) ),
               
               # also depends on (A,C)
               Y = rnorm( n = 1,
-                         mean = .p$betaCY * C + .p$betaAY * A ) )
+                         mean = .p$betaQY * Q + .p$betaCY * C + .p$betaAY * A ),
+              
+              RA = rbinom( n = 1,
+                           size = 1,
+                           #@hard-coded coef for A because not in scen.params
+                           prob = expit(-0.5 + .p$betaCR * C + 1 * A) ),
+              
+              RY = rbinom( n = 1,
+                           size = 1,
+                           #@hard-coded coef for A because not in scen.params
+                           prob = expit(-0.5 + .p$betaCR * C + 1 * A) ),
+              
+              RQ = rbinom( n = 1,
+                           size = 1,
+                           prob = expit(-0.5 + .p$betaQR * Q) ),
+              
+              R = RA * RY * RQ )
     
     # check intercept for R to get desired pR ~ 0.50
     mean(du$R)
     
-    gold_std_form_string = "Y ~ A"
-    unadj_form_string = "Y ~ A"
-    adj_form_string = "Y ~ A + C"
+    colMeans(du)
+    
+    gold_std_form_string = "Y ~ A + Q"
+    unadj_form_string = "Y ~ A + Q"
+    adj_form_string = "Y ~ A + C + Q"
     
   }
   
@@ -124,41 +153,107 @@ sim_data = function(.p) {
   # ~~ DAG I(b) ----
   # formerly "comm_cause_3"
   # M-bias
-  if ( .p$dag_name %in% c( "I(b)", "comm_cause_3" ) ) {
+  if ( .p$dag_name %in% c( "I(b)" ) ) {
     
-    du = data.frame( # A-R common cause
+    du = data.frame( 
+      
+      Q = rbinom( n = .p$N,
+                  size = 1,
+                  prob = 0.5),
+      
+      # A-R common cause
       U = rnorm( n = .p$N ),
       C = rnorm( n = .p$N ) )
     
     du = du %>% rowwise() %>%
-      mutate( R = rbinom( n = 1,
+      mutate( A = rbinom( n = 1,
                           size = 1,
-                          #@ using coef betaCR also for betaUR here
-                          prob = expit(.p$betaCR*C + .p$betaCR*U) ),
-              
-              A = rbinom( n = 1,
-                          size = 1,
-                          prob = expit(0 + 1*U) ),
+                          prob = expit(0 + 1*U + .p$betaQA * Q) ),
               
               Y = rnorm( n = 1,
-                         mean(.p$betaCY * C + .p$betaAY * A) ) )
+                         mean(.p$betaCY * C + .p$betaQY * Q + .p$betaAY * A) ),
+              
+              RA = rbinom( n = 1,
+                           size = 1,
+                           #@ using coef betaCR also for betaUR here
+                           prob = expit(.p$betaCR*C + .p$betaCR*U) ),
+              
+              RY = rbinom( n = 1,
+                           size = 1,
+                           #@ using coef betaCR also for betaUR here
+                           prob = expit(.p$betaCR*C + .p$betaCR*U) ),
+              
+              R = RA * RY
+      )
     
     
     colMeans(du)
     # check intercept for R to get desired pR ~ 0.50
     mean(du$R)
     
-    gold_std_form_string = "Y ~ A"
-    unadj_form_string = "Y ~ A"
-    adj_form_string = "Y ~ A + C"
+    gold_std_form_string = "Y ~ A + Q"
+    unadj_form_string = "Y ~ A + Q"
+    adj_form_string = "Y ~ A + C + Q"
     
   }
   
-  # ~~ DAG I(c) ----
-  # formerly "comm_cause_2"
-  if ( .p$dag_name %in% c( "I(c)", "comm_cause_2" ) ) {
+  
+  
+  # ~~ DAG I(b)-Q ----
+  # M-bias
+  if ( .p$dag_name %in% c( "I(b)-Q" ) ) {
     
-    du = data.frame( A = rbinom( n = .p$N,
+    du = data.frame( 
+      
+      Q = rbinom( n = .p$N,
+                  size = 1,
+                  prob = 0.5),
+      
+      # A-R common cause
+      U = rnorm( n = .p$N ),
+      C = rnorm( n = .p$N ) )
+    
+    du = du %>% rowwise() %>%
+      mutate( A = rbinom( n = 1,
+                          size = 1,
+                          prob = expit(0 + 1*U + .p$betaQA * Q) ),
+              
+              Y = rnorm( n = 1,
+                         mean(.p$betaCY * C + .p$betaQY * Q + .p$betaAY * A) ),
+              
+              RA = rbinom( n = 1,
+                           size = 1,
+                           #@ using coef betaCR also for betaUR here
+                           prob = expit(.p$betaCR*C + .p$betaCR*U) ),
+              
+              RY = rbinom( n = 1,
+                           size = 1,
+                           #@ using coef betaCR also for betaUR here
+                           prob = expit(.p$betaCR*C + .p$betaCR*U) ),
+              
+              RQ = rbinom( n = 1,
+                           size = 1,
+                           prob = expit(-0.5 + .p$betaQR * Q) ),
+              
+              R = RA * RY * RQ
+      )
+    
+    
+    colMeans(du)
+    # check intercept for R to get desired pR ~ 0.50
+    mean(du$R)
+    
+    gold_std_form_string = "Y ~ A + Q"
+    unadj_form_string = "Y ~ A + Q"
+    adj_form_string = "Y ~ A + C + Q"
+    
+  }
+  
+  
+  # ~~ DAG I(c) ----
+  if ( .p$dag_name %in% c( "I(c)" ) ) {
+    
+    du = data.frame( Q = rbinom( n = .p$N,
                                  size = 1,
                                  prob = 0.5),
                      
@@ -166,22 +261,83 @@ sim_data = function(.p) {
     
     
     du = du %>% rowwise() %>%
-      mutate( R = rbinom( n = 1,
+      mutate( A = rbinom( n = 1,
                           size = 1,
-                          # negative in order to make the bias negative
-                          #  so it fits nicely on existing plot :)
-                          prob = expit(0 - log(2) * C) ),
+                          prob = expit(-0.5 + .p$betaQA * Q) ),
               
               # also depends on (A,C)
               Y = rnorm( n = 1,
-                         mean = .p$betaCY*C + 1*A + 1*A*C ) )
+                         mean = .p$betaCY*C + 1*A + .p$betaQY * Q + 1*A*C ),
+              
+              RA = rbinom( n = 1,
+                           size = 1,
+                           # negative in order to make the bias negative
+                           #  so it fits nicely on existing plot :)
+                           prob = expit(0 - log(2) * C) ),
+              
+              
+              RY = rbinom( n = 1,
+                           size = 1,
+                           # negative in order to make the bias negative
+                           #  so it fits nicely on existing plot :)
+                           prob = expit(0 - log(2) * C) ),
+              
+              R = RA * RY )
     
     # check intercept for R to get desired pR ~ 0.50
     mean(du$R)
     
-    gold_std_form_string = "Y ~ A"
-    unadj_form_string = "Y ~ A"
-    adj_form_string = "Y ~ A * C"
+    gold_std_form_string = "Y ~ A + Q"
+    unadj_form_string = "Y ~ A + Q"
+    adj_form_string = "Y ~ A * C + Q"
+    
+  }
+  
+  
+  # ~~ DAG I(c)-Q ----
+  if ( .p$dag_name %in% c( "I(c)-Q" ) ) {
+    
+    du = data.frame( Q = rbinom( n = .p$N,
+                                 size = 1,
+                                 prob = 0.5),
+                     
+                     C = rnorm( n = .p$N ) )
+    
+    
+    du = du %>% rowwise() %>%
+      mutate( A = rbinom( n = 1,
+                          size = 1,
+                          prob = expit(-0.5 + .p$betaQA * Q) ),
+              
+              # also depends on (A,C)
+              Y = rnorm( n = 1,
+                         mean = .p$betaCY*C + 1*A + .p$betaQY * Q + 1*A*C ),
+              
+              RA = rbinom( n = 1,
+                           size = 1,
+                           # negative in order to make the bias negative
+                           #  so it fits nicely on existing plot :)
+                           prob = expit(0 - log(2) * C) ),
+              
+              
+              RY = rbinom( n = 1,
+                           size = 1,
+                           # negative in order to make the bias negative
+                           #  so it fits nicely on existing plot :)
+                           prob = expit(0 - log(2) * C) ),
+              
+              RQ = rbinom( n = 1,
+                           size = 1,
+                           prob = expit(-0.5 + .p$betaQR * Q) ),
+              
+              R = RA * RY * RQ )
+    
+    # check intercept for R to get desired pR ~ 0.50
+    mean(du$R)
+    
+    gold_std_form_string = "Y ~ A + Q"
+    unadj_form_string = "Y ~ A + Q"
+    adj_form_string = "Y ~ A * C + Q"
     
   }
   
@@ -192,64 +348,174 @@ sim_data = function(.p) {
   #   because of logistic regression's special properties
   
   # ~~ DAG II(a) ----
-  if ( .p$dag_name %in% c( "II(a)", "Y_to_R_1" ) ) {
+  if ( .p$dag_name %in% c( "II(a)" ) ) {
     
-    du = data.frame( C = rnorm( n = .p$N ),
-                     A = rbinom( n = .p$N,
+    du = data.frame( Q = rbinom( n = .p$N,
                                  size = 1,
-                                 prob = 0.5 ) )
+                                 prob = 0.5),
+                     
+                     C = rnorm( n = .p$N ) )
     
     du = du %>% rowwise() %>%
-      mutate( Y = rnorm( n = 1,
+      mutate( A = rbinom( n = 1,
+                          size = 1,
+                          prob = expit(-0.5 + .p$betaQA * Q) ),
+              
+              Y = rnorm( n = 1,
                          mean = .p$betaAY * A + .p$betaCY * C ),
               
-              R = rbinom( n = 1,
-                          size = 1,
-                          # uses betaCR for what's actually betaYR since it's a direct path
-                          prob = expit(-0.55 + .p$betaCR*Y) ) )
-    
-    
-    # check intercept for R to get desired pR ~ 0.50
-    mean(du$R)
-    
-    gold_std_form_string = "Y ~ A"
-    unadj_form_string = "Y ~ A"
-    adj_form_string = "Y ~ A + C"
-  }
-  
-  # ~~ DAG II(b) ----
-  if ( .p$dag_name %in% c( "II(b)", "Y_to_R_2" ) ) {
-    #  designed for OLS (continuous outcome)
-    #  so that we know the true beta = -1
-    du = data.frame( A = rbinom( n = .p$N,
-                                 size = 1,
-                                 prob = 0.5 ) )
-    
-    du = du %>% rowwise() %>%
-      mutate( 
-        Y = rnorm( n = 1,
-                   mean = .p$betaAY*A ),
-        
-        C = rnorm( n = 1,
-                   mean = .p$betaAC * A + .p$betaCY * Y ),
-        
-        R = rbinom( n = 1,
-                    size = 1,
-                    prob = expit(-1 + .p$betaCR * C) )
+              RA = rbinom( n = 1,
+                           size = 1,
+                           # uses betaCR for what's actually betaYR since it's a direct path
+                           prob = expit(-0.55 + .p$betaCR*Y) ),
+              
+              RY = rbinom( n = 1,
+                           size = 1,
+                           # uses betaCR for what's actually betaYR since it's a direct path
+                           prob = expit(-0.55 + .p$betaCR*Y) ),
+              
+              R = RA * RY
       )
     
     
     # check intercept for R to get desired pR ~ 0.50
     mean(du$R)
     
-    gold_std_form_string = "Y ~ A"
-    unadj_form_string = "Y ~ A"
+    gold_std_form_string = "Y ~ A + Q"
+    unadj_form_string = "Y ~ A + Q"
+    adj_form_string = "Y ~ A + C + Q"
+  }
+  
+  
+  
+  # ~~ DAG II(a)-Q ----
+  if ( .p$dag_name %in% c( "II(a)-Q" ) ) {
+    
+    du = data.frame( Q = rbinom( n = .p$N,
+                                 size = 1,
+                                 prob = 0.5),
+                     
+                     C = rnorm( n = .p$N ) )
+    
+    du = du %>% rowwise() %>%
+      mutate( A = rbinom( n = 1,
+                          size = 1,
+                          prob = expit(-0.5 + .p$betaQA * Q) ),
+              
+              Y = rnorm( n = 1,
+                         mean = .p$betaAY * A + .p$betaCY * C ),
+              
+              RA = rbinom( n = 1,
+                           size = 1,
+                           # uses betaCR for what's actually betaYR since it's a direct path
+                           prob = expit(-0.55 + .p$betaCR*Y) ),
+              
+              RY = rbinom( n = 1,
+                           size = 1,
+                           # uses betaCR for what's actually betaYR since it's a direct path
+                           prob = expit(-0.55 + .p$betaCR*Y) ),
+              
+              RQ = rbinom( n = 1,
+                           size = 1,
+                           prob = expit(-0.5 + .p$betaQR * Q) ),
+              
+              R = RA * RY * RQ
+      )
+    
+    
+    # check intercept for R to get desired pR ~ 0.50
+    mean(du$R)
+    
+    gold_std_form_string = "Y ~ A + Q"
+    unadj_form_string = "Y ~ A + Q"
+    adj_form_string = "Y ~ A + C + Q"
+  }
+  
+  
+  # ~~ DAG II(b) ----
+  if ( .p$dag_name %in% c( "II(b)" ) ) {
+    #  designed for OLS (continuous outcome)
+    #  so that we know the true beta = -1
+    du = data.frame( Q = rbinom( n = .p$N,
+                                 size = 1,
+                                 prob = 0.5) )
+    
+    du = du %>% rowwise() %>%
+      mutate( A = rbinom( n = 1,
+                          size = 1,
+                          prob = expit(-0.5 + .p$betaQA * Q) ),
+              Y = rnorm( n = 1,
+                         mean = .p$betaAY*A ),
+              
+              C = rnorm( n = 1,
+                         mean = .p$betaAC * A + .p$betaCY * Y ),
+              
+              RA = rbinom( n = 1,
+                           size = 1,
+                           prob = expit(-1 + .p$betaCR * C) ),
+              
+              RY = rbinom( n = 1,
+                           size = 1,
+                           prob = expit(-1 + .p$betaCR * C) ),
+              
+              R = RA * RY
+      )
+    
+    
+    # check intercept for R to get desired pR ~ 0.50
+    mean(du$R)
+    
+    gold_std_form_string = "Y ~ A + Q"
+    unadj_form_string = "Y ~ A + Q"
+    adj_form_string = NA  # because here, C is *not* a shared ancestor of R and Y
+  }
+  
+  
+  # ~~ DAG II(b)-Q ----
+  if ( .p$dag_name %in% c( "II(b)-Q" ) ) {
+    #  designed for OLS (continuous outcome)
+    #  so that we know the true beta = -1
+    du = data.frame( Q = rbinom( n = .p$N,
+                                 size = 1,
+                                 prob = 0.5) )
+    
+    du = du %>% rowwise() %>%
+      mutate( A = rbinom( n = 1,
+                          size = 1,
+                          prob = expit(-0.5 + .p$betaQA * Q) ),
+              Y = rnorm( n = 1,
+                         mean = .p$betaAY*A ),
+              
+              C = rnorm( n = 1,
+                         mean = .p$betaAC * A + .p$betaCY * Y ),
+              
+              RA = rbinom( n = 1,
+                           size = 1,
+                           prob = expit(-1 + .p$betaCR * C) ),
+              
+              RY = rbinom( n = 1,
+                           size = 1,
+                           prob = expit(-1 + .p$betaCR * C) ),
+              
+              RQ = rbinom( n = 1,
+                           size = 1,
+                           prob = expit(-0.5 + .p$betaQR * Q) ),
+              
+              R = RA * RY * RQ
+      )
+    
+    
+    # check intercept for R to get desired pR ~ 0.50
+    mean(du$R)
+    
+    gold_std_form_string = "Y ~ A + Q"
+    unadj_form_string = "Y ~ A + Q"
     adj_form_string = NA  # because here, C is *not* a shared ancestor of R and Y
   }
   
   
   
-  # # ~~ DAG II(c) ----
+  # # ~~ [old] DAG II(c) ----
   # # mediator-descendant non-existence
   # if ( .p$dag_name %in% c( "II(c)", "mediation_1" ) ) {
   #   
@@ -287,7 +553,7 @@ sim_data = function(.p) {
   # MI is still unbiased; makes sense because no Q -> R edge yet 
   
   # mediator-descendant non-existence
-  if ( .p$dag_name %in% c( "II(c)", "mediation_1" ) ) {
+  if ( .p$dag_name %in% c( "II(c)" ) ) {
     
     #bm
     du = data.frame( Q = rbinom( n = .p$N,
@@ -367,61 +633,125 @@ sim_data = function(.p) {
   # }
   
   
+  
+  # # ~~ DAG II(c)-Q [vars missing separately] ----
+  # 
+  # # same as II(c), but with Q -> RQ edge so that Q is self-censoring
+  # 
+  # # mediator-descendant non-existence
+  # if ( .p$dag_name %in% c( "II(c)-Q" ) ) {
+  # 
+  #   du = data.frame( Q = rbinom( n = .p$N,
+  #                                size = 1,
+  #                                prob = 0.5) )
+  # 
+  #   du = du %>% rowwise() %>%
+  #     mutate(
+  # 
+  #       A = rbinom( n = 1,
+  #                   size = 1,
+  #                   prob = expit(-0.5 + .p$betaQA * Q) ),
+  # 
+  #       # mediator
+  #       C = rnorm( n = 1,
+  #                  mean = .p$betaAC * A ),
+  # 
+  # 
+  #       # also depends on (A,C)
+  #       #**note here that we're calculating betaAY|givenC so that betaAY always represents the target beta for all models
+  #       # because here, gold-std will identify the TOTAL effect (i.e., .p$betaAY + (.p$betaAY - .p$betaCY) = .p$betaAY)
+  #       Y = rnorm( n = 1,
+  #                  mean = .p$betaQY * Q + .p$betaCY * C + (.p$betaAY - .p$betaCY) * A ),
+  # 
+  #       RQ = rbinom( n = 1,
+  #                    size = 1,
+  #                    prob = expit(-0.5 + .p$betaQR * Q) ),
+  # 
+  #       RA = rbinom( n = 1,
+  #                    size = 1,
+  #                    prob = expit(-0.5 + .p$betaCR * C) ),
+  # 
+  #       RY = rbinom( n = 1,
+  #                    size = 1,
+  #                    prob = expit(-0.5 + .p$betaCR * C) ),
+  # 
+  #       R = RQ * RA * RY
+  #     )
+  # 
+  #   # check intercept for R to get desired pR ~ 0.50
+  #   mean(du$R)
+  # 
+  #   colMeans(du)
+  #   cor(du)
+  # 
+  #   gold_std_form_string = "Y ~ A + Q"
+  #   unadj_form_string = "Y ~ A + Q"
+  #   adj_form_string = NA
+  # 
+  # }
+
+  
+  # version that's more like in IAI
   # ~~ DAG II(c)-Q [vars missing separately] ----
-  
+
   # same as II(c), but with Q -> RQ edge so that Q is self-censoring
-  
+
   # mediator-descendant non-existence
-  if ( .p$dag_name %in% c( "IV(c)-Q" ) ) {
-  
-    #bm
+  if ( .p$dag_name %in% c( "II(c)-Q" ) ) {
+
     du = data.frame( Q = rbinom( n = .p$N,
                                  size = 1,
                                  prob = 0.5) )
-    
+
     du = du %>% rowwise() %>%
-      mutate( 
-        
+      mutate(
+
         A = rbinom( n = 1,
                     size = 1,
                     prob = expit(-0.5 + .p$betaQA * Q) ),
-        
+
         # mediator
         C = rnorm( n = 1,
                    mean = .p$betaAC * A ),
-      
-        
+
+
         # also depends on (A,C)
         #**note here that we're calculating betaAY|givenC so that betaAY always represents the target beta for all models
         # because here, gold-std will identify the TOTAL effect (i.e., .p$betaAY + (.p$betaAY - .p$betaCY) = .p$betaAY)
         Y = rnorm( n = 1,
                    mean = .p$betaQY * Q + .p$betaCY * C + (.p$betaAY - .p$betaCY) * A ),
-        
+
         RQ = rbinom( n = 1,
                      size = 1,
-                     prob = expit(-0.5 + .p$betaQR * Q) ),
-        
+                     #bm: JUST INCREASED THIS! 
+                     prob = expit(-0.5 + 3 * Q) ),
+
         RA = rbinom( n = 1,
                      size = 1,
-                     prob = expit(-0.5 + .p$betaCR * C) ),
-        
+                     prob = 0.5 ),
+
+        RC = rbinom( n = 1,
+                     size = 1,
+                     prob = 0.5 ),
+
         RY = rbinom( n = 1,
                      size = 1,
-                     prob = expit(-0.5 + .p$betaCR * C) ), 
-        
-        R = RQ * RA * RY
-        )
-    
+                     prob = expit(-0.5 + .p$betaCR * C) ),
+
+        R = RA * RY * RQ * RC
+      )
+
+
     # check intercept for R to get desired pR ~ 0.50
     mean(du$R)
-    
+
     colMeans(du)
     cor(du)
-    
+
     gold_std_form_string = "Y ~ A + Q"
     unadj_form_string = "Y ~ A + Q"
     adj_form_string = NA
-    
+
   }
   
   
@@ -438,7 +768,10 @@ sim_data = function(.p) {
   # impose missingness
   # remember that choice of missing_vars only matters for MI
   dm = du
-  dm[ dm$R == 0, eval( parse(text = .p$missing_vars) ) ] = NA
+  if ( !is.null(dm$RA) ) dm$A[ dm$RA == 0 ] = NA
+  if ( !is.null(dm$RY) ) dm$Y[ dm$RY == 0 ] = NA
+  if ( !is.null(dm$RC) ) dm$C[ dm$RC == 0 ] = NA
+  if ( !is.null(dm$RQ) ) dm$Q[ dm$RQ == 0 ] = NA
   
   # include formula strings in returned object
   return( llist(du,

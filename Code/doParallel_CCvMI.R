@@ -166,7 +166,7 @@ if ( run.local == TRUE ) {
     rep.methods = "gold-std ; CC-adj ; CC-unadj ; MI-unadj ; MI-adj",
     model = "OLS",
 
-    dag_name = c( "IV(c)" ),
+    dag_name = c( "I(a)-Q" ),
     N = c(10^4),
     # true OLS coefficient of A on Y
     betaAY = c(1),
