@@ -1,0 +1,153 @@
+
+# PRELIMINARIES -----------------------------------------
+
+path = "/home/groups/manishad/NMAR2"
+setwd(path)
+source("helper_NMAR2.R")
+
+allPackages = c("here",
+                "crayon",
+                "dplyr",
+                "foreach",
+                "doParallel",
+                "data.table",
+                "purrr",
+                "tidyr",
+                "tibble",
+                "testthat",
+                "Hmisc",
+                "stringr",
+                "mice")
+
+( packagesNeeded = allPackages[ !( allPackages %in% installed.packages()[,"Package"] ) ] )
+if( length(packagesNeeded) > 0 ) install.packages(packagesNeeded)
+
+# load all packages
+lapply( allPackages,
+        require,
+        character.only = TRUE)
+
+#**you need to see all "TRUE" printed by this in order for the package to actually be loaded
+
+
+
+# SET SIMULATION PARAMETERS -----------------------------------------
+
+scen.params = tidyr::expand_grid(
+  
+  # methods to run for each simulation rep
+  rep.methods = "gold-std ; CC-adj ; CC-unadj ; MI-adj ; MI-unadj ; IPW-adj ; IPW-unadj",
+  model = "OLS",
+  
+  dag_name = c( "I(a)",
+                "I(b)",
+                "I(c)",
+                
+                "II(a)",
+                "II(b)",
+                "II(c)"),
+  
+  N = c(100, 250, 500, 2500, 5000, 10000),
+  # true OLS coefficient of A on Y
+  betaAY = c(1),
+  # OLS coeff of C on Y or vice versa
+  betaCY = c(1),
+  # OLS coef of A on C, if applicable
+  betaAC = c(1),
+  # logistic regression coef of C on R
+  betaCR = c(1),
+  
+  # which var(s) should be missing?
+  # options: "c('A', 'Y', 'C'), c('A'), c('Y')"
+  missing_vars = c( "c('A', 'Y')", "c('Y')",  "c('A')")  # quotation marks must be single inside double
+)
+
+
+# add scen numbers
+start.at = 1
+scen.params = scen.params %>% add_column( scen = start.at : ( nrow(scen.params) + (start.at - 1) ),
+                                          .before = 1 )
+
+
+( n.scen = nrow(scen.params) )
+# look at it
+head( as.data.frame(scen.params) )
+
+# write the csv file of params (to Sherlock)
+setwd(path)
+write.csv( scen.params, "scen_params.csv", row.names = FALSE )
+
+
+########################### GENERATE SBATCHES ###########################
+
+# load functions for generating sbatch files
+source("helper_NMAR2.R")
+
+# number of sbatches to generate (i.e., iterations within each scenario)
+n.reps.per.scen = 1000
+n.reps.in.doParallel = 1000  
+( n.files = ( n.reps.per.scen / n.reps.in.doParallel ) * n.scen )
+
+
+path = "/home/groups/manishad/NMAR2"
+
+scen.name = rep( scen.params$scen, each = ( n.files / n.scen ) )
+jobname = paste("job", 1:n.files, sep="_")
+outfile = paste("rm_", 1:n.files, ".out", sep="")
+errorfile = paste("rm_", 1:n.files, ".err", sep="")
+write_path = paste(path, "/sbatch_files/", 1:n.files, ".sbatch", sep="")
+runfile_path = paste(path, "/testRunFile.R", sep="")
+
+sbatch_params <- data.frame(jobname,
+                            outfile,
+                            errorfile,
+                            jobtime = "00:10:00", 
+                            quality = "normal",
+                            node_number = 1,
+                            mem_per_node = 64000,
+                            mailtype =  "NONE",
+                            user_email = "mmathur@stanford.edu",
+                            tasks_per_node = 16,
+                            cpus_per_task = 1,
+                            path_to_r_script = paste(path, "/doParallel_NMAR2.R", sep=""),
+                            args_to_r_script = paste("--args", jobname, scen.name, sep=" "),
+                            write_path,
+                            stringsAsFactors = F,
+                            server_sbatch_path = NA)
+
+generateSbatch(sbatch_params, runfile_path)
+
+n.files
+
+# run just the first one
+# sbatch -p qsu,owners,normal /home/groups/manishad/NMAR2/sbatch_files/1.sbatch
+
+# 108 files
+path = "/home/groups/manishad/NMAR2"
+setwd( paste(path, "/sbatch_files", sep="") )
+for (i in 1:108) {
+  system( paste("sbatch -p qsu,owners,normal /home/groups/manishad/NMAR2/sbatch_files/", i, ".sbatch", sep="") )
+}
+
+
+
+
+
+######## If Running Only Some Jobs To Fill Gaps ########
+
+# run in Sherlock ml load R
+path = "/home/groups/manishad/NMAR2"
+setwd(path)
+source("helper_NMAR2.R")
+
+missed.nums = sbatch_not_run( "/home/groups/manishad/NMAR2/long_results",
+                              "/home/groups/manishad/NMAR2/long_results",
+                              .name.prefix = "long_results",
+                              .max.sbatch.num = 45 )
+
+
+
+setwd( paste(path, "/sbatch_files", sep="") )
+for (i in missed.nums) {
+  system( paste("sbatch -p qsu,owners,normal /home/groups/manishad/NMAR2/sbatch_files/", i, ".sbatch", sep="") )
+}
