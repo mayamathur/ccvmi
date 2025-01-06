@@ -1,0 +1,26 @@
+{
+    "id": "30EF0BDB",
+    "path": "~/Dropbox/Personal computer/Independent studies/2023/*CCvMI (complete-case vs. multiple imputation)/Linked to OSF (CCvMI)/Simulation study/Code/doParallel_CCvMI.R",
+    "project_path": "Code/doParallel_CCvMI.R",
+    "type": "r_source",
+    "hash": "3313713075",
+    "contents": "",
+    "dirty": false,
+    "created": 1736172488375.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "75,13",
+        "scrollLine": "59"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1736172500,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1736172500760,
+    "read_only": false,
+    "read_only_alternatives": []
+}
