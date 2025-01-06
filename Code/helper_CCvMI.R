@@ -88,6 +88,39 @@ sim_data = function(.p) {
   }
   
   
+  
+  
+  # ~~ DAG II(a)-Q ----
+  if ( .p$dag_name %in% c( "II(a)-Q" ) ) {
+    
+    du = data.frame( A = rbinom( n = .p$N,
+                                 size = 1,
+                                 prob = 0.5),
+                     
+                     C = rnorm( n = .p$N ) )
+    
+    du = du %>% rowwise() %>%
+      mutate( R = rbinom( n = 1,
+                          size = 1,
+                          #@hard-coded coef for A because not in scen.params
+                          prob = expit(-0.5 + .p$betaCR * C + 1 * A) ),
+              
+              # also depends on (A,C)
+              Y = rnorm( n = 1,
+                         mean = .p$betaCY * C + .p$betaAY * A ) )
+    
+    # check intercept for R to get desired pR ~ 0.50
+    mean(du$R)
+    
+    gold_std_form_string = "Y ~ A"
+    unadj_form_string = "Y ~ A"
+    adj_form_string = "Y ~ A + C"
+    
+  }
+  
+  
+  
+  
   # ~~ DAG I(b) ----
   # formerly "comm_cause_3"
   # M-bias
@@ -292,7 +325,7 @@ sim_data = function(.p) {
   }
   
   
-  # # ~~ DAG IV(c) [vars still missing jointly] ----
+  # # ~~ [X] DAG II(c)-Q [vars still missing jointly] ----
   # # MI still unbiased! 
   # # same as II(c), but with Q -> R edge so that Q is self-censoring
   # 
@@ -334,12 +367,12 @@ sim_data = function(.p) {
   # }
   
   
-  # ~~ DAG IV(c) [vars missing separately] ----
+  # ~~ DAG II(c)-Q [vars missing separately] ----
   
   # same as II(c), but with Q -> RQ edge so that Q is self-censoring
   
   # mediator-descendant non-existence
-  if ( .p$dag_name %in% c( "IV(c)" ) ) {
+  if ( .p$dag_name %in% c( "IV(c)-Q" ) ) {
   
     #bm
     du = data.frame( Q = rbinom( n = .p$N,
