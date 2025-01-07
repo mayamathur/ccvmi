@@ -32,10 +32,8 @@ toLoad = c("crayon",
            "tidyr",
            "tibble",
            "testthat",
-           "Hmisc",
            "stringr",
-           "mice",
-           "sandwich")
+           "mice")
 
 if ( run.local == TRUE | interactive.cluster.run == TRUE ) toLoad = c(toLoad, "here")
 
@@ -159,47 +157,15 @@ if ( run.local == TRUE ) {
   
   # ~~ ********** Set Sim Params: Local Run -----------------------------
   
-    # FOR RUNNING 1 SCEN
-  scen.params = tidyr::expand_grid(
-
-    #rep.methods = "gold-std ; CC-adj ; CC-unadj ; MI-adj ; MI-unadj ; IPW-unadj ; IPW-adj",
-    rep.methods = "gold-std ; CC-adj ; CC-unadj ; MI-unadj ; MI-adj",
-    model = "OLS",
-
-    dag_name = c( "I(a)-Q" ),
-    N = c(10^4),
-    # true OLS coefficient of A on Y
-    betaAY = c(1),
-    # OLS coeff of C on Y or vice versa
-    betaCY = c(1),
-    # OLS coef of A on C, if applicable
-    betaAC = c(1),
-    # logistic regression coef of C on R
-    betaCR = c(1),
-    # logistic regression coef of Q [confounder] on A
-    betaQA = c(1),
-    # logistic regression coef of Q [confounder] on A
-    betaQR = c(1),
-    # OLS regression coef of Q [confounder] on Y
-    betaQY = c(1),
-
-    # which var(s) should be missing?
-    # options: "c('A', 'Y'), c('A'), c('Y')"
-    missing_vars = c( "c('A', 'Y', 'Q')")  # quotation marks must be single inside double
-  )
-  
-  # # FULL SET
+  #   # FOR RUNNING 1 SCEN
   # scen.params = tidyr::expand_grid(
-  #   
-  #   # methods to run for each simulation rep
-  #   rep.methods = "gold-std ; CC-adj ; CC-unadj ; MI-adj ; MI-unadj",
+  # 
+  #   #rep.methods = "gold-std ; CC-adj ; CC-unadj ; MI-adj ; MI-unadj ; IPW-unadj ; IPW-adj",
+  #   rep.methods = "gold-std ; CC-adj ; CC-unadj ; MI-unadj ; MI-adj",
   #   model = "OLS",
-  #   
-  #   # DAGs: Y_to_R_1, Y_to_R_2, comm_cause_1, comm_cause_2, comm_cause_3, mediation_1
-  #   dag_name = c( "Y_to_R_1", "Y_to_R_2",
-  #                 "comm_cause_1", "comm_cause_2", "comm_cause_3",
-  #                 "mediation_1" ),
-  #   N = c(100, 500, 5000, 10000),
+  # 
+  #   dag_name = c( "I(a)-Q" ),
+  #   N = c(10^4),
   #   # true OLS coefficient of A on Y
   #   betaAY = c(1),
   #   # OLS coeff of C on Y or vice versa
@@ -208,11 +174,53 @@ if ( run.local == TRUE ) {
   #   betaAC = c(1),
   #   # logistic regression coef of C on R
   #   betaCR = c(1),
-  #   
+  #   # logistic regression coef of Q [confounder] on A
+  #   betaQA = c(1),
+  #   # logistic regression coef of Q [confounder] on A
+  #   betaQR = c(3),
+  #   # OLS regression coef of Q [confounder] on Y
+  #   betaQY = c(1),
+  # 
   #   # which var(s) should be missing?
-  #   # options: "c('A', 'Y', 'C'), c('A'), c('Y')"
-  #   missing_vars = c( "c('A', 'Y')", "c('Y')",  "c('A')" )  # quotation marks must be single inside double
+  #   # options: "c('A', 'Y'), c('A'), c('Y')"
+  #   missing_vars = c( "c('A', 'Y', 'Q')")  # quotation marks must be single inside double
   # )
+  
+  # FULL SET
+  scen.params = tidyr::expand_grid(
+    
+    # methods to run for each simulation rep
+    rep.methods = "gold-std ; CC-adj ; CC-unadj ; MI-adj ; MI-unadj",
+    model = "OLS",
+    
+    dag_name = c( "I(a)",
+                  "I(a)-Q",
+                  "I(b)",
+                  "I(b)-Q",
+                  "I(c)",
+                  "I(c)-Q",
+                  
+                  "II(a)",
+                  "II(a)-Q",
+                  "II(b)",
+                  "II(b)-Q",
+                  "II(c)",
+                  "II(c)-Q"),
+    
+    N = 1000,
+    #N = c(100, 250, 500, 2500, 5000, 10000),
+    # true OLS coefficient of A on Y
+    betaAY = c(1),
+    # OLS coeff of C on Y or vice versa
+    betaCY = c(1),
+    # OLS coef of A on C, if applicable
+    betaAC = c(1),
+    # logistic regression coef of C on R
+    betaCR = c(1),
+    
+    betaQA = 1,
+    betaQY = 1,
+    betaQR = 3 )
   
   start.at = 1  # scen name to start at
   scen.params$scen = start.at:( nrow(scen.params) + start.at - 1 )

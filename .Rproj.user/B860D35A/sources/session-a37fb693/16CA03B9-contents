@@ -8,6 +8,8 @@ cd /home/groups/manishad/CCvMI/sbatch_files
 
 sbatch -p qsu,owners,normal /home/groups/manishad/CCvMI/sbatch_files/1.sbatch
 
+
+
 # check on my running or pending jobs
 squeue -u mmathur -t RUNNING
 squeue -u mmathur -t PENDING
@@ -34,7 +36,7 @@ nano /home/groups/manishad/CCvMI/sim_results/overall_stitched/sti*
 # CODE -> SHERLOCK ----------------------------------
 
 # push all Sherlock code
-scp /Users/mmathur/Dropbox/Personal\ computer/Independent\ studies/\*Inchoate/2022/CCvMI/Linked\ to\ OSF\ \(CCvMI\)/Simulation\ study/Code/* mmathur@login.sherlock.stanford.edu:/home/groups/manishad/CCvMI
+scp /Users/mmathur/Dropbox/Personal\ computer/Independent\ studies/2023/\*CCvMI\ \(complete-case\ vs.\ multiple\ imputation\)/Linked\ to\ OSF\ \(CCvMI\)/Simulation\ study/Code/* mmathur@login.sherlock.stanford.edu:/home/groups/manishad/CCvMI
 
 
 
@@ -75,12 +77,10 @@ scp mmathur@login.sherlock.stanford.edu /home/groups/manishad/CCvMI/results/over
 rsync -a --delete /home/groups/manishad/CCvMI/empty_dir/ /home/groups/manishad/CCvMI/long_results/
   
   # delete stitched results
-  rm /home/groups/manishad/CCvMI/overall_stitched/*
   rm /home/groups/manishad/CCvMI/stitched_results/*
   
   # delete "rm" files
-  rm /home/users/mmathur/rm_*
-  rm /home/groups/manishad/CCvMI/sbatch_files/rm_*
+  rm /home/groups/manishad/CCvMI/rm_files/*
   
   
   # DELETE ALL SBATCHES

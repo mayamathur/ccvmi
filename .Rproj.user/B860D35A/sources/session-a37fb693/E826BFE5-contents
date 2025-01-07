@@ -36,18 +36,28 @@ lapply( allPackages,
 scen.params = tidyr::expand_grid(
   
   # methods to run for each simulation rep
-  rep.methods = "gold-std ; CC-adj ; CC-unadj ; MI-adj ; MI-unadj ; IPW-adj ; IPW-unadj",
+  rep.methods = "gold-std ; CC-adj ; CC-unadj ; MI-adj ; MI-unadj",
   model = "OLS",
   
-  dag_name = c( "I(a)",
-                "I(b)",
-                "I(c)",
-                
-                "II(a)",
-                "II(b)",
-                "II(c)"),
+  # dag_name = c( "I(a)",
+  #               "I(a)-Q",
+  #               "I(b)",
+  #               "I(b)-Q",
+  #               "I(c)",
+  #               "I(c)-Q",
+  #               
+  #               "II(a)",
+  #               "II(a)-Q",
+  #               "II(b)",
+  #               "II(b)-Q",
+  #               "II(c)",
+  #               "II(c)-Q"),
   
-  N = c(100, 250, 500, 2500, 5000, 10000),
+  dag_name = c( "II(c)",
+                "II(c)-Q"),
+  
+  N = 10000,
+  #N = c(100, 250, 500, 2500, 5000, 10000),
   # true OLS coefficient of A on Y
   betaAY = c(1),
   # OLS coeff of C on Y or vice versa
@@ -57,10 +67,9 @@ scen.params = tidyr::expand_grid(
   # logistic regression coef of C on R
   betaCR = c(1),
   
-  # which var(s) should be missing?
-  # options: "c('A', 'Y', 'C'), c('A'), c('Y')"
-  missing_vars = c( "c('A', 'Y')", "c('Y')",  "c('A')")  # quotation marks must be single inside double
-)
+  betaQA = 1,
+  betaQY = 1,
+  betaQR = 3 )
 
 
 # add scen numbers
@@ -93,8 +102,8 @@ path = "/home/groups/manishad/CCvMI"
 
 scen.name = rep( scen.params$scen, each = ( n.files / n.scen ) )
 jobname = paste("job", 1:n.files, sep="_")
-outfile = paste("rm_", 1:n.files, ".out", sep="")
-errorfile = paste("rm_", 1:n.files, ".err", sep="")
+outfile = paste("/rm_files/rm_", 1:n.files, ".out", sep="")
+errorfile = paste(path, "/rm_files/rm_", 1:n.files, ".err", sep="")
 write_path = paste(path, "/sbatch_files/", 1:n.files, ".sbatch", sep="")
 runfile_path = paste(path, "/testRunFile.R", sep="")
 
@@ -122,10 +131,10 @@ n.files
 # run just the first one
 # sbatch -p qsu,owners,normal /home/groups/manishad/CCvMI/sbatch_files/1.sbatch
 
-# 108 files
+# 12 files
 path = "/home/groups/manishad/CCvMI"
 setwd( paste(path, "/sbatch_files", sep="") )
-for (i in 1:108) {
+for (i in 1:2) {
   system( paste("sbatch -p qsu,owners,normal /home/groups/manishad/CCvMI/sbatch_files/", i, ".sbatch", sep="") )
 }
 

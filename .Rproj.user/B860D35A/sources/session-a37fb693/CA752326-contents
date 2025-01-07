@@ -515,53 +515,20 @@ sim_data = function(.p) {
   
   
   
-  # # ~~ [old] DAG II(c) ----
-  # # mediator-descendant non-existence
-  # if ( .p$dag_name %in% c( "II(c)", "mediation_1" ) ) {
-  #   
-  #   
-  #   du = data.frame( A = rbinom( n = .p$N,
-  #                                size = 1,
-  #                                prob = 0.5) )
-  #   
-  #   du = du %>% rowwise() %>%
-  #     mutate( 
-  #       C = rnorm( n = 1,
-  #                  mean = .p$betaAC * A ),
-  #       
-  #       R = rbinom( n = 1,
-  #                   size = 1,
-  #                   prob = expit(-0.5 + .p$betaCR * C) ),
-  #       
-  #       # also depends on (A,C)
-  #       #**note here that we're calculating betaAY|givenC so that betaAY always represents the target beta for all models
-  #       # because here, gold-std will identify the TOTAL effect (i.e., .p$betaAY + (.p$betaAY - .p$betaCY) = .p$betaAY)
-  #       Y = rnorm( n = 1,
-  #                  mean = .p$betaCY * C + (.p$betaAY - .p$betaCY) * A ) )
-  #   
-  #   # check intercept for R to get desired pR ~ 0.50
-  #   mean(du$R)
-  #   
-  #   gold_std_form_string = "Y ~ A"
-  #   unadj_form_string = "Y ~ A"
-  #   adj_form_string = NA
-  #   
-  # }
+  # version that's more like in IAI
+  # ~~ DAG II(c) [vars missing separately] ----
   
-  
-  # ~~ DAG II(c) [NEW VERSION; all vars missing jointly] ----
-  # MI is still unbiased; makes sense because no Q -> R edge yet 
+  # same as II(c), but with Q -> RQ edge so that Q is self-censoring
   
   # mediator-descendant non-existence
   if ( .p$dag_name %in% c( "II(c)" ) ) {
     
-    #bm
     du = data.frame( Q = rbinom( n = .p$N,
                                  size = 1,
                                  prob = 0.5) )
     
     du = du %>% rowwise() %>%
-      mutate( 
+      mutate(
         
         A = rbinom( n = 1,
                     size = 1,
@@ -571,18 +538,34 @@ sim_data = function(.p) {
         C = rnorm( n = 1,
                    mean = .p$betaAC * A ),
         
-        R = rbinom( n = 1,
-                    size = 1,
-                    prob = expit(-0.5 + .p$betaCR * C) ),
         
         # also depends on (A,C)
-        #**note here that we're calculating betaAY|givenC so that betaAY always represents the target beta for all models
+        #**note here that we're calculating betaAY given C so that betaAY always represents the target beta for all models
         # because here, gold-std will identify the TOTAL effect (i.e., .p$betaAY + (.p$betaAY - .p$betaCY) = .p$betaAY)
         Y = rnorm( n = 1,
-                   mean = .p$betaQY * Q + .p$betaCY * C + (.p$betaAY - .p$betaCY) * A ) )
+                   mean = .p$betaQY * Q + .p$betaCY * C + (.p$betaAY - .p$betaCY) * A ),
+        
+        RA = rbinom( n = 1,
+                     size = 1,
+                     prob = expit(-0.5 + .p$betaCR * C) ),
+        
+        RC = rbinom( n = 1,
+                     size = 1,
+                     prob = expit(-0.5 + .p$betaCR * C) ),
+        
+        RY = rbinom( n = 1,
+                     size = 1,
+                     prob = expit(-0.5 + .p$betaCR * C) ),
+        
+        R = RA * RY * RC
+      )
+    
     
     # check intercept for R to get desired pR ~ 0.50
     mean(du$R)
+    
+    colMeans(du)
+    cor(du)
     
     gold_std_form_string = "Y ~ A + Q"
     unadj_form_string = "Y ~ A + Q"
@@ -591,167 +574,65 @@ sim_data = function(.p) {
   }
   
   
-  # # ~~ [X] DAG II(c)-Q [vars still missing jointly] ----
-  # # MI still unbiased! 
-  # # same as II(c), but with Q -> R edge so that Q is self-censoring
-  # 
-  # # mediator-descendant non-existence
-  # if ( .p$dag_name %in% c( "IV(c)" ) ) {
-  #   
-  #   #bm
-  #   du = data.frame( Q = rbinom( n = .p$N,
-  #                                size = 1,
-  #                                prob = 0.5) )
-  #   
-  #   du = du %>% rowwise() %>%
-  #     mutate( 
-  #       
-  #       A = rbinom( n = 1,
-  #                   size = 1,
-  #                   prob = expit(-0.5 + .p$betaQA * Q) ),
-  #       
-  #       # mediator
-  #       C = rnorm( n = 1,
-  #                  mean = .p$betaAC * A ),
-  #       
-  #       R = rbinom( n = 1,
-  #                   size = 1,
-  #                   prob = expit(-0.5 + .p$betaCR * C + .p$betaQR * Q) ),
-  #       
-  #       # also depends on (A,C)
-  #       #**note here that we're calculating betaAY|givenC so that betaAY always represents the target beta for all models
-  #       # because here, gold-std will identify the TOTAL effect (i.e., .p$betaAY + (.p$betaAY - .p$betaCY) = .p$betaAY)
-  #       Y = rnorm( n = 1,
-  #                  mean = .p$betaQY * Q + .p$betaCY * C + (.p$betaAY - .p$betaCY) * A ) )
-  #   
-  #   # check intercept for R to get desired pR ~ 0.50
-  #   mean(du$R)
-  #   
-  #   gold_std_form_string = "Y ~ A + Q"
-  #   unadj_form_string = "Y ~ A + Q"
-  #   adj_form_string = NA
-  # }
+  # ~~ DAG II(c)-Q ----
   
-  
-  
-  # # ~~ DAG II(c)-Q [vars missing separately] ----
-  # 
-  # # same as II(c), but with Q -> RQ edge so that Q is self-censoring
-  # 
-  # # mediator-descendant non-existence
-  # if ( .p$dag_name %in% c( "II(c)-Q" ) ) {
-  # 
-  #   du = data.frame( Q = rbinom( n = .p$N,
-  #                                size = 1,
-  #                                prob = 0.5) )
-  # 
-  #   du = du %>% rowwise() %>%
-  #     mutate(
-  # 
-  #       A = rbinom( n = 1,
-  #                   size = 1,
-  #                   prob = expit(-0.5 + .p$betaQA * Q) ),
-  # 
-  #       # mediator
-  #       C = rnorm( n = 1,
-  #                  mean = .p$betaAC * A ),
-  # 
-  # 
-  #       # also depends on (A,C)
-  #       #**note here that we're calculating betaAY|givenC so that betaAY always represents the target beta for all models
-  #       # because here, gold-std will identify the TOTAL effect (i.e., .p$betaAY + (.p$betaAY - .p$betaCY) = .p$betaAY)
-  #       Y = rnorm( n = 1,
-  #                  mean = .p$betaQY * Q + .p$betaCY * C + (.p$betaAY - .p$betaCY) * A ),
-  # 
-  #       RQ = rbinom( n = 1,
-  #                    size = 1,
-  #                    prob = expit(-0.5 + .p$betaQR * Q) ),
-  # 
-  #       RA = rbinom( n = 1,
-  #                    size = 1,
-  #                    prob = expit(-0.5 + .p$betaCR * C) ),
-  # 
-  #       RY = rbinom( n = 1,
-  #                    size = 1,
-  #                    prob = expit(-0.5 + .p$betaCR * C) ),
-  # 
-  #       R = RQ * RA * RY
-  #     )
-  # 
-  #   # check intercept for R to get desired pR ~ 0.50
-  #   mean(du$R)
-  # 
-  #   colMeans(du)
-  #   cor(du)
-  # 
-  #   gold_std_form_string = "Y ~ A + Q"
-  #   unadj_form_string = "Y ~ A + Q"
-  #   adj_form_string = NA
-  # 
-  # }
-
-  
-  # version that's more like in IAI
-  # ~~ DAG II(c)-Q [vars missing separately] ----
-
   # same as II(c), but with Q -> RQ edge so that Q is self-censoring
-
+  
   # mediator-descendant non-existence
   if ( .p$dag_name %in% c( "II(c)-Q" ) ) {
-
+    
     du = data.frame( Q = rbinom( n = .p$N,
                                  size = 1,
                                  prob = 0.5) )
-
+    
     du = du %>% rowwise() %>%
       mutate(
-
+        
         A = rbinom( n = 1,
                     size = 1,
                     prob = expit(-0.5 + .p$betaQA * Q) ),
-
+        
         # mediator
         C = rnorm( n = 1,
                    mean = .p$betaAC * A ),
-
-
+        
+        
         # also depends on (A,C)
         #**note here that we're calculating betaAY|givenC so that betaAY always represents the target beta for all models
         # because here, gold-std will identify the TOTAL effect (i.e., .p$betaAY + (.p$betaAY - .p$betaCY) = .p$betaAY)
         Y = rnorm( n = 1,
                    mean = .p$betaQY * Q + .p$betaCY * C + (.p$betaAY - .p$betaCY) * A ),
-
+        
         RQ = rbinom( n = 1,
                      size = 1,
-                     #bm: JUST INCREASED THIS! 
-                     prob = expit(-0.5 + 3 * Q) ),
-
+                     prob = expit(-0.5 + .p$betaQR * Q) ),
+        
         RA = rbinom( n = 1,
                      size = 1,
-                     prob = 0.5 ),
-
+                     prob = expit(-0.5 + .p$betaCR * C) ),
+        
         RC = rbinom( n = 1,
                      size = 1,
-                     prob = 0.5 ),
-
+                     prob = expit(-0.5 + .p$betaCR * C) ),
+        
         RY = rbinom( n = 1,
                      size = 1,
                      prob = expit(-0.5 + .p$betaCR * C) ),
-
+        
         R = RA * RY * RQ * RC
       )
-
-
+    
+    
     # check intercept for R to get desired pR ~ 0.50
     mean(du$R)
-
+    
     colMeans(du)
     cor(du)
-
+    
     gold_std_form_string = "Y ~ A + Q"
     unadj_form_string = "Y ~ A + Q"
     adj_form_string = NA
-
+    
   }
   
   
@@ -774,12 +655,11 @@ sim_data = function(.p) {
   if ( !is.null(dm$RQ) ) dm$Q[ dm$RQ == 0 ] = NA
   
   # include formula strings in returned object
-  return( llist(du,
-                dm,
-                gold_std_form_string,
-                adj_form_string,
-                unadj_form_string) )
-  
+  return( list(du = du,
+               dm = dm,
+               gold_std_form_string = gold_std_form_string,
+               adj_form_string = adj_form_string,
+               unadj_form_string = unadj_form_string) )
 }
 
 
@@ -1117,7 +997,7 @@ sbatch_skeleton <- function() {
 #now run normal batch commands
 
 ml load v8
-ml load R/4.2.0
+ml load R/4.3.2
 R -f PATH_TO_R_SCRIPT ARGS_TO_R_SCRIPT")
 }
 

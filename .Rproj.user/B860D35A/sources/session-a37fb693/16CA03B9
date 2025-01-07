@@ -3,7 +3,7 @@
     "path": "~/Dropbox/Personal computer/Independent studies/2023/*CCvMI (complete-case vs. multiple imputation)/Linked to OSF (CCvMI)/Simulation study/Code/push_to_sherlock_CCvMI.R",
     "project_path": "Code/push_to_sherlock_CCvMI.R",
     "type": "r_source",
-    "hash": "1436661058",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1736172526676.0,
@@ -12,15 +12,15 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "18,46",
-        "scrollLine": "0"
+        "cursorPosition": "57,0",
+        "scrollLine": "38"
     },
     "folds": "",
-    "lastKnownWriteTime": 1736172534,
+    "lastKnownWriteTime": 1736258134,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1736172534964,
+    "last_content_update": 1736258134625,
     "read_only": false,
     "read_only_alternatives": []
 }
